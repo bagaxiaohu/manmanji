@@ -1,0 +1,54 @@
+<view class="swipe-page">
+  <view class="topline"><button class="back" bindtap="leave">‹ 返回</button><text>{{title}}</text><text class="muted">{{dictationMode ? '听写' : '刷刷刷'}}</text></view>
+  <view wx:if="{{phase === 'loading'}}" class="empty">正在准备当前计划…</view>
+  <view wx:elif="{{phase === 'error'}}" class="empty">读取进度失败，请返回首页检查备份。</view>
+  <view wx:elif="{{phase === 'empty'}}" class="empty">当前没有待学词，稍后回来复习，或在设置中换一本词书。</view>
+  <block wx:elif="{{phase === 'cards'}}">
+    <block wx:if="{{preparing || missing.length}}">
+      <view class="intro"><text class="eyebrow">READY, STEADY, SWIPE</text><view class="title">先把声音准备好。</view><text class="muted">当前计划 {{planTotal}} 个词 · 已检查 {{prepared}} 个</text></view>
+      <view class="panel"><text>英式优先，缺失时用美式补充。</text><text class="muted">预载完成后，每张卡片出现时自动读一遍。</text><text wx:if="{{missing.length}}" class="warning">暂未取得音频：{{missingLabel}}</text></view>
+      <view wx:if="{{failureReason}}" class="panel"><text class="warning">{{failureReason}}</text><text wx:if="{{domainBlocked}}" class="muted">在小程序后台「开发管理 → 开发设置 → 服务器域名」的 downloadFile 合法域名中添加：https://uapis.cn、https://dict.youdao.com、https://fanyi.baidu.com。保存后重新编译，再点重试。</text><text class="diagnostic" selectable="{{true}}">{{failureDetails}}</text></view>
+      <button wx:if="{{missing.length}}" class="primary" bindtap="preparePlan">重新准备音频</button>
+    </block>
+    <block wx:else>
+      <view class="counter">{{index}} / {{total}} 张 · 计划共 {{planTotal}} 词</view>
+      <view class="swipe-card" bindtouchstart="touchStart" catchtouchmove="noop" bindtouchend="touchEnd" bindtouchcancel="touchCancel">
+        <block wx:if="{{isGap}}"><text class="flower">✿</text><view class="title">给记忆一点间隔。</view><text class="muted">只剩同一个词需要再见，先停一停，回想刚才的意思。</text></block>
+        <block wx:else>
+          <view class="row"><text class="pill">{{card.group}}</text><text class="muted">{{recall}}</text></view>
+          <text class="word">{{card.word}}</text>
+          <button class="phonetic" catchtap="playCard">{{card.phonetic}} ♬</button>
+          <view class="meaning-block"><text class="meaning">{{card.meaning}}</text></view>
+        </block>
+      </view>
+      <text class="audio-status">{{audioStatus}}</text><text class="gesture-note">整张卡片都能滑动，轻点音标再听一遍。</text>
+      <view class="swipe-hints"><text>← 下一词</text><text>上一词 →</text><text>↑ 忘记了 · 再见两次</text><text>↓ 有点模糊 · 再见一次</text></view>
+      <view class="button-row"><button class="soft" bindtap="previous">上一张</button><button class="primary" bindtap="nextCard">{{isGap ? '想一想，继续' : '下一张'}}</button></view>
+      <view wx:if="{{!isGap}}" class="button-row secondary-row"><button class="soft peach" bindtap="forgetCard">忘记了 ↑</button><button class="soft" bindtap="vagueCard">有点模糊 ↓</button></view>
+    </block>
+  </block>
+  <block wx:elif="{{phase === 'overview'}}">
+    <view class="intro"><text class="eyebrow">ONE PLAN, ALL REMEMBERED</text><view class="title">这一组，刷完啦。</view><text class="muted">本组 {{planTotal}} 个词已刷完。可以选择听写，也可以直接完成本组。点单词可以重听。</text></view>
+    <view wx:for="{{overview}}" wx:key="id" class="overview-row"><button class="overview-word" data-id="{{item.id}}" bindtap="playOverview">{{item.word}} ♬</button><text class="meaning">{{item.meaning}}</text></view>
+    <text class="audio-status">{{audioStatus}}</text><button class="primary" bindtap="startDictation">进入听写</button><button class="soft next" bindtap="skipDictation">不听写，完成本组</button><text class="footnote">两种题型混合。每词最多三遍，也可以提前下一词。全部完成后才显示对错。</text>
+  </block>
+  <block wx:elif="{{phase === 'quiz'}}">
+    <view class="intro"><text class="eyebrow">LISTEN AND WRITE</text><view class="title">第 {{quizIndex}} / {{quizTotal}} 词</view><text class="muted">{{questionKind === 'sound' ? '听英文发音，写出单词和中文释义' : '听部分中文释义，写出英文单词并补全中文意思'}}</text></view>
+    <view class="panel listening"><text class="listen-symbol">♬</text><button class="primary" bindtap="playQuestion" disabled="{{plays >= 3 || playing}}">{{playing ? '正在播放…' : plays >= 3 ? '已播放三遍' : '再听一遍'}}</button><text class="muted">已播放 {{plays}} / 3 遍（含自动播放）</text><text class="audio-status">{{audioStatus}}</text></view>
+    <text wx:if="{{questionKind === 'meaning'}}" class="footnote">{{maleSpeechEnabled ? '中文男声完整朗读全部释义。' : '当前公共音源可能摘读部分释义；完整男声需开通语音合成。'}}</text>
+    <view wx:if="{{questionAudioError}}" class="panel"><text class="diagnostic" selectable="{{true}}">{{questionAudioError}}</text></view>
+    <input class="field" placeholder="写出英文单词" value="{{draftWord}}" bindinput="inputWord" maxlength="100" />
+    <textarea class="field meaning-input" placeholder="写出你记得的完整中文释义" value="{{draftMeaning}}" bindinput="inputMeaning" maxlength="500" />
+    <button class="primary next" bindtap="nextQuestion">{{quizIndex === quizTotal ? '整组交卷，查看结果' : '下一词 →'}}</button><text class="footnote">可以空着继续，答案统一留到最后订正。</text>
+  </block>
+  <block wx:elif="{{phase === 'cardsDone'}}">
+    <view class="intro"><text class="eyebrow">A LITTLE EVERY DAY</text><view class="title">这一组，学完啦。</view><text class="muted">本组 {{planTotal}} 个词的刷卡记录已保存。</text></view>
+    <button class="primary" bindtap="newPlan">继续下一组</button><button class="soft next" bindtap="leave">回到首页</button>
+  </block>
+  <block wx:elif="{{phase === 'results' || phase === 'done'}}">
+    <view class="intro"><text class="eyebrow">LOOK BACK, MOVE FORWARD</text><view class="title">{{phase === 'done' ? '本组已完成，辛苦啦。' : '整组写完，再一起订正。'}}</view><text class="muted">当前确认正确 {{correct}} / {{planTotal}} 词。另有 {{planTotal - checked}} 词未自评，可直接确认完成。</text></view>
+    <view wx:for="{{results}}" wx:key="id" class="result-card"><view class="row"><text class="result-word">{{item.expectedWord}}</text><text class="badge {{item.spellingCorrect ? 'ok' : 'wrong'}}">{{item.spellingCorrect ? '拼写正确' : '拼写待订正'}}</text></view><text class="muted">你的拼写：{{item.word || '未作答'}}</text><text class="muted">你的释义：{{item.meaning || '未作答'}}</text><text class="meaning">{{item.expectedMeaning}}</text><view wx:if="{{phase === 'results'}}" class="button-row"><button class="soft {{item.meaningCorrect === true ? 'chosen' : ''}}" data-id="{{item.id}}" data-correct="yes" bindtap="markMeaning">释义答对了</button><button class="soft peach {{item.meaningCorrect === false ? 'chosen' : ''}}" data-id="{{item.id}}" data-correct="no" bindtap="markMeaning">释义记错了</button></view></view>
+    <button wx:if="{{phase === 'results'}}" class="primary" bindtap="finishReview">确认完成（已自评 {{checked}} / {{planTotal}}）</button>
+    <block wx:else><button class="primary" bindtap="newPlan">继续下一组</button><button class="soft next" bindtap="leave">回到首页</button></block>
+  </block>
+</view>

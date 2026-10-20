@@ -1,0 +1,10 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const { words } = require(path.join(root, 'miniprogram/data/words'));
+const { definitionText } = require(path.join(root, 'miniprogram/utils/speech-text'));
+const destination = path.join(root, 'cloudfunctions/meaningSpeech');
+fs.mkdirSync(destination, { recursive: true });
+fs.writeFileSync(path.join(destination, 'dictionary.json'), JSON.stringify(Object.fromEntries(words.map(word => [word.id, definitionText(word.meaning)]))));
+fs.copyFileSync(path.join(root, 'miniprogram/utils/speech-text.js'), path.join(destination, 'speech-text.js'));
+console.log(`Prepared complete definitions for ${words.length} entries. No audio service was called.`);

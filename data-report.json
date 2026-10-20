@@ -1,0 +1,27 @@
+{
+  "total": 6026,
+  "uniqueHeadwords": 6021,
+  "categories": {
+    "core": 2278,
+    "occasional": 1478,
+    "basic": 1802,
+    "supplement": 468
+  },
+  "sources": [
+    {
+      "file": "考研词汇 Word List 1-30 与偶考词 合并版.docx",
+      "count": 3756,
+      "sha256": "1991e6833123d36d72d6b4fd9fa7dd44ac6594680e6304e4ed873ad63b95f453"
+    },
+    {
+      "file": "简单词与补充词 2270词 文字音标版.docx",
+      "count": 2270,
+      "sha256": "c94e0a5aef27499107760507a4a4779ed830d3a1a7a442d2abf949445c0157e2"
+    }
+  ],
+  "notes": [
+    "保留重复词头及原始释义，进度按词条记录。",
+    "仅整理空白和换行，未校订原文疑似错字。",
+    "PDF 未导入；两份 Word 已包含可直接读取的文字词条。"
+  ]
+}

@@ -1,0 +1,93 @@
+<view class="app {{studying && !finished ? 'study-app' : ''}}">
+  <block wx:if="{{studying}}">
+    <view class="study-top"><button class="text-button" bindtap="leaveStudy">‹ 返回</button><text class="study-title">{{sessionTitle}}</text><text class="muted study-counter">{{finished ? '完成' : position + ' / ' + queueLength}}</text></view>
+    <block wx:if="{{!finished}}">
+      <view class="track"><view class="fill" style="width: {{sessionPercent}}%"></view></view>
+      <view class="study-label">{{revealed ? '看看释义，确认刚才的回想' : '先回想意思，再选择记忆情况'}}</view>
+      <view class="word-card">
+        <view class="card-top"><text class="pill">{{card.group}}</text><button class="star {{favorite ? 'active' : ''}}" bindtap="toggleFavorite" aria-label="收藏单词">{{favorite ? '★' : '☆'}}</button></view>
+        <view class="study-card-content">
+          <scroll-view class="study-card-scroll" scroll-y="{{true}}" scroll-top="{{0}}">
+            <text class="big-word" selectable="{{true}}">{{card.word}}</text>
+            <button class="phonetic study-pronunciation" bindtap="playCard">{{card.phonetic}} ♬</button>
+            <view wx:if="{{revealed}}" class="meaning"><text selectable="{{true}}">{{card.meaning}}</text></view>
+            <view wx:else class="hidden-meaning">这个单词，你还记得吗？</view>
+          </scroll-view>
+        </view>
+      </view>
+      <text class="study-audio-status">{{audioStatus}}</text>
+      <view class="study-actions">
+        <view wx:if="{{!revealed}}" class="rating-row">
+          <view class="study-action-slot">
+            <button wx:if="{{!revealed}}" class="rating hard" data-rating="hard" bindtap="chooseRating"><text>有点模糊</text><text class="rating-hint">记得一点点</text></button>
+          </view>
+          <view class="study-action-slot">
+            <button wx:if="{{!revealed}}" class="rating good" data-rating="good" bindtap="chooseRating"><text>认识</text><text class="rating-hint">我记得它的意思</text></button>
+          </view>
+          <view class="study-action-slot">
+            <button wx:if="{{!revealed}}" class="rating again" data-rating="again" bindtap="chooseRating"><text>忘记了</text><text class="rating-hint">再学一遍也没关系</text></button>
+          </view>
+        </view>
+        <view wx:else class="answer-actions">
+          <button class="rating next-word" bindtap="nextWord"><text>下一词 →</text></button>
+          <button wx:if="{{pendingRating !== 'again'}}" class="rating again" bindtap="correctAnswer"><text>记错了</text></button>
+        </view>
+        <text class="footnote">{{!revealed ? '按真实感觉选择，选好后就能看到释义。' : corrected ? '已改为“忘记了”，点击下一词后保存。' : '看清释义后，再继续下一词。'}}</text>
+      </view>
+    </block>
+    <view wx:else class="completion"><view class="completion-icon">✿</view><text class="eyebrow">A LITTLE EVERY DAY</text><view class="heading">这一轮，完成啦。</view><text class="muted">你认真看过了 {{completedCount}} 个词，作答 {{completedAnswers}} 次。</text><view class="quote">{{settings.note}}</view><button class="primary" bindtap="openCompletedDictation">进入本组听写</button><button wx:if="{{canContinue}}" class="secondary" data-mode="daily" bindtap="continueStudy">{{continueLabel}} →</button><button class="{{canContinue ? 'secondary' : 'primary'}}" bindtap="endStudy">收下今天的小进步</button><text class="footnote">不认识的词会在约 10 分钟后再次到期。</text></view>
+  </block>
+
+  <block wx:else>
+    <view class="brand-row"><view><text class="brand">慢慢记<text class="brand-flower"> ✿</text></text><text class="brand-caption">给你的考研单词本</text></view><button class="settings-button" bindtap="openSettings">设置</button></view>
+    <view wx:if="{{storageError}}" class="notice">学习记录读取异常，已暂停保存。请重新打开或恢复备份。</view>
+    <block wx:if="{{tab === 'home'}}">
+      <view class="greeting"><text class="eyebrow">{{dateLabel}} · 一点点，也在向前</text><view class="heading">{{settings.name}}，<view>今天也陪你记单词。</view></view><text class="subheading">不赶路，先记住眼前这一个。</text></view>
+      <view class="daily-card"><view class="row-between"><text class="pill light">TODAY’S PLAN</text><view class="plan-picker-trigger" bindtap="openPlanPicker" hover-class="plan-trigger-pressed" role="button" aria-label="选择学习计划">{{planBadge}} ▾</view></view><view class="daily-title">{{stats.manualPlan ? '重学所选计划，按你的节奏来' : stats.planKind === 'list' ? '按词表慢慢学，今天不设上限' : '目标是鼓励，达标后也能继续学'}}</view><view class="daily-numbers"><view><text class="number">{{stats.planKind === 'list' || stats.manualPlan ? stats.listLearned : stats.dailyNew}}<text class="number-unit"> / {{stats.planKind === 'list' || stats.manualPlan ? stats.listTotal : settings.goal}}</text></text><text class="small-light">{{stats.planKind === 'history' ? '本计划已学' : stats.planKind === 'list' ? '本 List 已学 · 已完成 ' + stats.completedLists + ' / 30 组' : '今日已学新词 · 不设上限'}}</text></view><view class="due-count"><text class="number">{{stats.due}}</text><text class="small-light">到期复习</text></view></view><view class="track light-track"><view class="fill light-fill" style="width: {{stats.planPercent}}%"></view></view><button class="cream-button" data-mode="daily" bindtap="start">{{actionLabel}} <text>→</text></button></view>
+      <view class="mode-entries"><button class="swipe-entry" bindtap="startSwipe"><view><text class="swipe-entry-title">刷刷刷 →</text><text class="muted">滑动卡片，轻松记词</text></view></button><button class="swipe-entry dictation-entry" bindtap="startDictation"><view><text class="swipe-entry-title">听写 →</text><text class="muted">听音写词，整组订正</text></view></button></view>
+      <view class="mini-stats"><view><text class="stat-number">{{stats.streak}}<text class="unit"> 天</text></text><text class="muted">连续学习</text></view><view class="learned-stat" bindtap="openLearnedWords" hover-class="learned-stat-pressed" role="button" aria-label="查看当前词书已学单词"><text class="stat-number">{{stats.learned}}<text class="unit"> 词</text></text><text class="muted">当前词书已学 ›</text></view><view><text class="stat-number">{{stats.percent}}<text class="unit"> %</text></text><text class="muted">词书进度</text></view></view>
+      <view class="section-title">留一点时间，给复习</view><view class="shortcut-row"><button class="shortcut" data-mode="review" bindtap="start"><text class="shortcut-icon">↻</text><text class="shortcut-title">温故知新</text><text class="muted">{{stats.due}} 个词正在等你</text></button><button class="shortcut peach" data-mode="favorites" bindtap="start"><text class="shortcut-icon">☆</text><text class="shortcut-title">我的收藏</text><text class="muted">把 {{stats.favoriteCount}} 个词再看一遍</text></button></view>
+      <view class="note"><text class="note-flower">✳</text><text>{{settings.note}}</text></view><text class="home-footer">今天的你，也在悄悄变厉害。</text>
+    </block>
+
+    <block wx:if="{{tab === 'library'}}">
+      <view class="page-intro"><text class="eyebrow">{{onlyLearned ? 'WORDS YOU HAVE LEARNED' : 'YOUR LITTLE DICTIONARY'}}</text><view class="heading">{{onlyLearned ? '这些单词，已经见过面了。' : '把陌生，慢慢变熟悉。'}}</view><text class="subheading">{{onlyLearned ? learnedBookName + ' · 已学词条，可搜索、查看和收藏' : '6,026 条原书词条，随时查一查。'}}</text></view>
+      <input class="search" placeholder="搜索英文单词或中文释义" value="{{search}}" bindinput="searchInput" confirm-type="search" />
+      <view wx:if="{{!onlyLearned}}" class="filter-rows">
+        <view wx:for="{{filterRows}}" wx:for-item="row" wx:key="id" class="filter-row">
+          <button wx:for="{{row.options}}" wx:key="id" class="chip {{filterCategory === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="chooseFilter">{{item.short}}</button>
+        </view>
+      </view>
+      <button wx:if="{{onlyLearned}}" class="text-button learned-library-link" bindtap="showFullLibrary">查看完整词库 →</button>
+      <view class="row-between library-meta"><text class="muted">找到 {{totalMatches}} 条词条</text><button class="text-button {{onlyFavorites ? 'green-text' : ''}}" bindtap="toggleFavoritesFilter">{{onlyFavorites ? '★ 只看收藏' : '☆ 只看收藏'}}</button></view>
+      <view wx:for="{{list}}" wx:key="id" class="word-row"><view class="word-row-main" data-id="{{item.id}}" bindtap="openDetail"><view class="row-word">{{item.word}}<text wx:if="{{item.learned}}" class="learned-dot"> · 已学</text></view><text class="row-phonetic">{{item.phonetic}}</text><text class="row-meaning">{{item.meaning}}</text><text class="row-group">{{item.group}}</text></view><button class="star {{item.favorite ? 'active' : ''}}" data-id="{{item.id}}" bindtap="toggleFavorite" aria-label="收藏单词">{{item.favorite ? '★' : '☆'}}</button></view>
+      <view wx:if="{{!list.length}}" class="empty">{{onlyFavorites ? '这里还没有符合条件的收藏。' : onlyLearned && !search ? '当前词书还没有已学词条，先去学几个吧。' : '没有找到，换个词试试看。'}}</view><button wx:if="{{list.length < totalMatches}}" class="load-more" bindtap="loadMore">继续看看 ↓</button><view wx:else class="list-end">已经看到最后啦</view>
+    </block>
+
+    <block wx:if="{{tab === 'progress'}}">
+      <view class="page-intro"><text class="eyebrow">SMALL STEPS, REAL PROGRESS</text><view class="heading">每一点努力，都有回响。</view><text class="subheading">今天认真学过 {{stats.todayCount}} 个不同的词。</text></view>
+      <view class="progress-card"><view class="row-between"><text class="section-title no-margin">{{categoryName}}</text><text class="green-text">{{stats.percent}}%</text></view><view class="progress-number">{{stats.learned}}<text class="unit"> / {{stats.total}} 词已学</text></view><view class="track"><view class="fill" style="width: {{stats.percent}}%"></view></view><view class="progress-caption"><text>其中 {{stats.mastered}} 词已连续推进至较长复习间隔</text></view></view>
+      <view class="section-title">最近七天</view><view class="chart"><view wx:for="{{stats.week}}" wx:key="label" class="bar-column"><text class="bar-number">{{item.count}}</text><view class="bar-space"><view class="bar" style="height: {{item.height}}rpx"></view></view><text class="bar-label">{{item.label}}</text></view></view><text class="footnote">每天实际学过的不同词条数，重复作答只计一个。</text>
+      <view class="milestones"><view><text class="stat-number">{{stats.days}}</text><text class="muted">累计学习天数</text></view><view><text class="stat-number">{{stats.streak}}</text><text class="muted">连续学习天数</text></view></view><view class="note"><text class="note-flower">✿</text><text>有时快一点，有时慢一点。走过的每一步，都不会白费。</text></view>
+      <view class="local-note">进度保存在当前微信的本地存储中。换手机或清理数据前，请在设置中导出备份。</view>
+    </block>
+    <view class="tabbar"><button class="tab {{tab === 'home' ? 'tab-active' : ''}}" data-tab="home" bindtap="switchTab"><text class="tab-icon">⌂</text><text>今天</text></button><button class="tab {{tab === 'library' ? 'tab-active' : ''}}" data-tab="library" bindtap="switchTab"><text class="tab-icon">▤</text><text>词库</text></button><button class="tab {{tab === 'progress' ? 'tab-active' : ''}}" data-tab="progress" bindtap="switchTab"><text class="tab-icon">◷</text><text>足迹</text></button></view>
+  </block>
+
+  <view wx:if="{{detail}}" class="overlay" bindtap="closeDetail"><view class="sheet" catchtap="noop"><view class="row-between"><text class="pill">{{detail.group}}</text><button class="text-button" bindtap="closeDetail">关闭</button></view><text class="detail-word" selectable="{{true}}">{{detail.word}}</text><text class="phonetic" selectable="{{true}}">{{detail.phonetic}}</text><view class="meaning"><text selectable="{{true}}">{{detail.meaning}}</text></view><button class="secondary" data-id="{{detail.id}}" bindtap="toggleFavorite">{{detailFavorite ? '★ 已收藏 · 点击取消' : '☆ 收进我的收藏'}}</button></view></view>
+
+  <view wx:if="{{showSettings}}" class="overlay" bindtap="closeSettings"><view class="sheet settings-sheet" catchtap="noop"><view class="row-between"><text class="section-title no-margin">按你的节奏来</text><button class="text-button" bindtap="closeSettings">关闭</button></view><scroll-view scroll-y="{{true}}" class="settings-scroll"><text class="field-label">非 Word List 词库的每日新词目标</text><input class="field" type="number" value="{{draft.goal}}" data-field="goal" bindinput="editSetting" /><text class="local-note">Word List 1–30 按组学习，不受每日目标限制。其他词库默认每日目标 20 词，达到目标后仍可继续学。</text><text class="field-label">正在学习的词书</text><view wx:for="{{categories}}" wx:key="id" class="book-option {{draft.category === item.id ? 'book-selected' : ''}}" data-id="{{item.id}}" bindtap="chooseCategory"><view><text class="book-name">{{item.name}} · {{item.count}} 词</text><text class="muted">{{item.hint}}</text></view><text>{{draft.category === item.id ? '●' : '○'}}</text></view><text class="field-label">写给她的一句话</text><textarea class="field note-input" value="{{draft.note}}" maxlength="150" data-field="note" bindinput="editSetting" /><view class="backup-row"><button class="text-button" bindtap="exportBackup">导出进度备份</button><button class="text-button" bindtap="openImport">恢复备份</button></view><text class="local-note">学习记录仅保存在当前设备。词条保留原书释义和可能存在的错字；同一词头的不同词条分别记录进度。普通学习和刷刷刷模式均支持在线发音；听写在刷刷刷模式中提供；本版不含例句。</text></scroll-view><button class="primary" bindtap="saveSettings">保存我的设置</button></view></view>
+  <view wx:if="{{backupMode}}" class="overlay backup-overlay" bindtap="closeImport"><view class="sheet" catchtap="noop"><view class="row-between"><text class="section-title no-margin">恢复学习进度</text><button class="text-button" bindtap="closeImport">关闭</button></view><textarea class="backup-input" placeholder="把之前导出的完整备份文字粘贴在这里" value="{{backupText}}" maxlength="-1" bindinput="inputBackup" /><button class="primary" bindtap="restoreBackup">检查并恢复</button></view></view>
+  <view wx:if="{{showPlanPicker}}" class="overlay" bindtap="closePlanPicker"><view class="sheet" catchtap="noop">
+    <view class="row-between"><text class="section-title no-margin">选择学习计划</text><button class="text-button" bindtap="closePlanPicker">关闭</button></view>
+    <scroll-view scroll-y="{{true}}" class="plan-picker-scroll">
+      <button class="book-option" data-type="auto" bindtap="choosePlan">自动接续未学计划 →</button>
+      <text class="field-label">Word List 1–30 · 可选择整组重学</text>
+      <view class="plan-grid"><button wx:for="{{planLists}}" wx:key="number" class="plan-option" data-type="list" data-id="{{item.number}}" bindtap="choosePlan"><text>List {{item.number}}</text><text class="muted">已学 {{item.learned}} / {{item.total}}</text></button></view>
+      <text class="field-label">之前学过的计划与学习记录</text>
+      <button wx:for="{{planHistory}}" wx:key="id" class="history-option" data-type="history" data-id="{{item.id}}" bindtap="choosePlan"><text>{{item.title}}</text><text class="muted">{{item.count}} 个词 · 点击重学或听写</text></button>
+      <text wx:if="{{!planHistory.length}}" class="muted">学完一组后，会自动保存在这里。</text>
+    </scroll-view>
+  </view></view>
+
+</view>

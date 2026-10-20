@@ -1,0 +1,12 @@
+{
+  "pages": ["pages/index/index", "pages/swipe/index"],
+  "window": {
+    "navigationBarTitleText": "慢慢记",
+    "navigationBarBackgroundColor": "#faf8f4",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#faf8f4"
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}
